@@ -1,0 +1,12 @@
+{
+  "name": "spotify-now-playing",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Spotify now playing card for my GitHub profile",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "token": "node scripts/get-refresh-token.js"
+  }
+}
