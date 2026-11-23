@@ -155,12 +155,14 @@ function renderCard(track, cover) {
 
   const showProgress = playing && track.progressMs != null && track.durationMs;
   let progress = "";
+  let endsIn = null;
   if (showProgress) {
     // The card keeps "playing" after it loads: the bar grows and the clock
     // ticks every second until the song ends, like Discord's status.
     const startSec = Math.floor(track.progressMs / 1000);
     const endSec = Math.floor(track.durationMs / 1000);
     const remaining = Math.max(0, Math.min(endSec - startSec, 900));
+    endsIn = remaining;
     const w0 = Math.round(barW * Math.min(1, track.progressMs / track.durationMs));
 
     const ticks = [];
@@ -198,8 +200,15 @@ function renderCard(track, cover) {
     <rect width="${W}" height="${H}" fill="#000000" opacity="0.45"/>
     ${art}
     <rect x="${ax}" y="${ay}" width="${A}" height="${A}" rx="8" fill="none" stroke="#ffffff" stroke-opacity="0.15"/>
-    ${equalizer(tx, 44, playing)}
-    <text x="${tx + 32}" y="43" ${font} font-size="11" font-weight="600" letter-spacing="1.5" fill="${labelColor}">${label}</text>
+    ${endsIn == null
+      ? `${equalizer(tx, 44, playing)}
+    <text x="${tx + 32}" y="43" ${font} font-size="11" font-weight="600" letter-spacing="1.5" fill="${labelColor}">${label}</text>`
+      : `<g>${equalizer(tx, 44, true)}
+      <text x="${tx + 32}" y="43" ${font} font-size="11" font-weight="600" letter-spacing="1.5" fill="${GREEN}">NOW PLAYING</text>
+      <set attributeName="opacity" to="0" begin="${endsIn}s" fill="freeze"/></g>
+    <g opacity="0">${equalizer(tx, 44, false)}
+      <text x="${tx + 32}" y="43" ${font} font-size="11" font-weight="600" letter-spacing="1.5" fill="#d0d4d9">JUST PLAYED</text>
+      <set attributeName="opacity" to="1" begin="${endsIn}s" fill="freeze"/></g>`}
     <text x="${tx}" y="${showProgress ? 72 : 80}" ${font} font-size="20" font-weight="600" fill="#ffffff">${esc(cut(track.title, 26))}</text>
     <text x="${tx}" y="${showProgress ? 93 : 102}" ${font} font-size="14" fill="#ffffff" opacity="0.8">${esc(cut(track.artist, 36))}</text>
     ${progress}
