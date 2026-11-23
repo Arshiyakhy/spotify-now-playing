@@ -235,7 +235,10 @@ module.exports = async (req, res) => {
   }
 
   res.setHeader("Content-Type", "image/svg+xml");
-  // Ask GitHub's image proxy not to hold on to an old song for long
-  res.setHeader("Cache-Control", "no-cache, max-age=0, s-maxage=30");
+  // Never cache: GitHub's image proxy and Vercel's CDN must fetch a fresh
+  // card every time, or an old song sticks around after you change tracks
+  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
   res.status(200).send(svg);
 };
