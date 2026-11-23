@@ -154,12 +154,35 @@ function renderCard(track, cover) {
     : `<rect x="${ax}" y="${ay}" width="${A}" height="${A}" rx="8" fill="#30363d"/>`;
 
   const showProgress = playing && track.progressMs != null && track.durationMs;
-  const progress = showProgress
-    ? `<rect x="${tx}" y="106" width="${barW}" height="4" rx="2" fill="#ffffff" opacity="0.25"/>
-       <rect x="${tx}" y="106" width="${Math.round(barW * Math.min(1, track.progressMs / track.durationMs))}" height="4" rx="2" fill="#ffffff"/>
-       <text x="${tx}" y="126" ${font} font-size="11" fill="#ffffff" opacity="0.75">${time(track.progressMs)}</text>
-       <text x="${tx + barW}" y="126" ${font} font-size="11" fill="#ffffff" opacity="0.75" text-anchor="end">${time(track.durationMs)}</text>`
-    : "";
+  let progress = "";
+  if (showProgress) {
+    // The card keeps "playing" after it loads: the bar grows and the clock
+    // ticks every second until the song ends, like Discord's status.
+    const startSec = Math.floor(track.progressMs / 1000);
+    const endSec = Math.floor(track.durationMs / 1000);
+    const remaining = Math.max(0, Math.min(endSec - startSec, 900));
+    const w0 = Math.round(barW * Math.min(1, track.progressMs / track.durationMs));
+
+    const ticks = [];
+    for (let i = 0; i <= remaining; i++) {
+      const visible = i === 0 && remaining === 0
+        ? ""
+        : i === 0
+        ? `<set attributeName="opacity" to="0" begin="1s" fill="freeze"/>`
+        : `<set attributeName="opacity" to="0.75" begin="${i}s"/><set attributeName="opacity" to="0" begin="${i + 1}s"/>`;
+      const last = i === remaining && i > 0
+        ? `<set attributeName="opacity" to="0.75" begin="${i}s" fill="freeze"/>`
+        : visible;
+      ticks.push(`<text x="${tx}" y="126" ${font} font-size="11" fill="#ffffff" opacity="${i === 0 ? 0.75 : 0}">${time((startSec + i) * 1000)}${last}</text>`);
+    }
+
+    progress = `<rect x="${tx}" y="106" width="${barW}" height="4" rx="2" fill="#ffffff" opacity="0.25"/>
+       <rect x="${tx}" y="106" width="${w0}" height="4" rx="2" fill="#ffffff">
+         <animate attributeName="width" from="${w0}" to="${barW}" dur="${Math.max(remaining, 1)}s" fill="freeze"/>
+       </rect>
+       ${ticks.join("")}
+       <text x="${tx + barW}" y="126" ${font} font-size="11" fill="#ffffff" opacity="0.75" text-anchor="end">${time(track.durationMs)}</text>`;
+  }
 
   const label = playing ? "NOW PLAYING" : "LAST PLAYED";
   const labelColor = playing ? GREEN : "#d0d4d9";
